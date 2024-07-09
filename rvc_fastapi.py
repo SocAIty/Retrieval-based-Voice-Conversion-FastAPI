@@ -19,6 +19,7 @@ from configs.config import Config
 from infer.modules.vc.modules import VC
 import fastapi
 import uvicorn
+import glob
 
 # load_dotenv is also very bad practice but necessary due bad code
 load_dotenv()
@@ -62,9 +63,9 @@ def infer(
         input: Union[str, bytes], # filepath or raw bytes
         model_name: str,
         index_path: str = None,
-        f0up_key: int = 0,
+        f0up_key: int = 0, # -12 one octave lower 12 one octave higher
         f0method: str = "crepe",
-        index_rate: float = 0.66,
+        index_rate: float = 0.66, # controls accent strength, too high has artifacting):
         device: str = None,
         is_half: bool = False,
         filter_radius: int = 3,
@@ -76,9 +77,11 @@ def infer(
     model_name = model_name.replace(".pth", "")
 
     if index_path is None:
-        index_path = os.path.join("logs", model_name, f"added_IVF1254_Flat_nprobe_1_{model_name}_v2.index")
-        if not os.path.exists(index_path):
-            raise ValueError(f"autinferred index_path {index_path} does not exist. Please provide a valid index_path")
+        index_path = os.path.join("logs", model_name, f"added_IVF*_Flat_nprobe_*_{model_name}_v*.index")
+        index_path = glob.glob(index_path)
+        if len(index_path) == 0:
+            raise ValueError(f"auto inferred index_path {index_path} does not exist. Please provide a valid index_path")
+        index_path = index_path[0]
 
     vc = model_cache.load_model(model_name, device=device, is_half=is_half)
 
@@ -124,7 +127,7 @@ async def voice2voice(
     :param index_path: the index file of the previously trained model if none then use default dir logs by rvc.
     :param f0up_key: 0 or 1
     :param f0method: harvest, pm, crepe or rmvpe
-    :param index_rate: 0.66
+    :param index_rate: 0.66 controls accent strength, too high has artifacting.
     :param device: if none then use default by rvc. cuda or cpu or specific cuda device "cuda:0", "cuda:1"
     :param is_half: False or True
     :param filter_radius: 3
