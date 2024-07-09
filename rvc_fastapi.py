@@ -1,4 +1,3 @@
-
 from typing import Union
 import os
 import sys
@@ -31,26 +30,30 @@ app = fastapi.FastAPI(
     contact={
         "name": "w4hns1nn",
         "url": "https://github.com/w4hns1nn",
-    }
+    },
 )
 
 tags = [
     {
         "name": "voice2voice",
-        "description": "Voice2Voice conversion using the pretrained model"
+        "description": "Voice2Voice conversion using the pretrained model",
     }
 ]
+
 
 class ModelCache:
     """
     This class is used to cache the models so that they don't need to be loaded every time
     """
+
     def __init__(self):
         self.models = {}
 
     def load_model(self, model_name: str, device: str = None, is_half: bool = True):
         if model_name not in self.models:
-            config = Config() # config_file_folder="A:/projects/Retrieval-based-Voice-Conversion-WebUI/configs/")
+            config = (
+                Config()
+            )  # config_file_folder="A:/projects/Retrieval-based-Voice-Conversion-WebUI/configs/")
             config.device = device if device else config.device
             config.is_half = is_half if is_half else config.is_half
             vc = VC(config)
@@ -60,27 +63,31 @@ class ModelCache:
 
 
 def infer(
-        input: Union[str, bytes], # filepath or raw bytes
-        model_name: str,
-        index_path: str = None,
-        f0up_key: int = 0, # -12 one octave lower 12 one octave higher
-        f0method: str = "crepe",
-        index_rate: float = 0.66, # controls accent strength, too high has artifacting):
-        device: str = None,
-        is_half: bool = False,
-        filter_radius: int = 3,
-        resample_sr: int = 0,
-        rms_mix_rate: float = 1,
-        protect: float = 0.33,
-        **kwargs
-    ):
+    input: Union[str, bytes],  # filepath or raw bytes
+    model_name: str,
+    index_path: str = None,
+    f0up_key: int = 0,  # -12 one octave lower 12 one octave higher
+    f0method: str = "crepe",
+    index_rate: float = 0.66,  # controls accent strength, too high has artifacting):
+    device: str = None,
+    is_half: bool = False,
+    filter_radius: int = 3,
+    resample_sr: int = 0,
+    rms_mix_rate: float = 1,
+    protect: float = 0.33,
+    **kwargs,
+):
     model_name = model_name.replace(".pth", "")
 
     if index_path is None:
-        index_path = os.path.join("logs", model_name, f"added_IVF*_Flat_nprobe_*_{model_name}_v*.index")
+        index_path = os.path.join(
+            "logs", model_name, f"added_IVF*_Flat_nprobe_*_{model_name}_v*.index"
+        )
         index_path = glob.glob(index_path)
         if len(index_path) == 0:
-            raise ValueError(f"auto inferred index_path {index_path} does not exist. Please provide a valid index_path")
+            raise ValueError(
+                f"auto inferred index_path {index_path} does not exist. Please provide a valid index_path"
+            )
         index_path = index_path[0]
 
     vc = model_cache.load_model(model_name, device=device, is_half=is_half)
@@ -97,7 +104,7 @@ def infer(
         filter_radius=filter_radius,
         resample_sr=resample_sr,
         rms_mix_rate=rms_mix_rate,
-        protect=protect
+        protect=protect,
     )
 
     # using virtual file to be able to return it as response
@@ -119,7 +126,7 @@ async def voice2voice(
     filter_radius: int = 3,
     resample_sr: int = 0,
     rms_mix_rate: float = 1,
-    protect: float = 0.33
+    protect: float = 0.33,
 ):
     """
     :param input_file: the .wav file to be converted
@@ -147,7 +154,11 @@ async def voice2voice(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    return StreamingResponse(wf, media_type="audio/wav", headers={"Content-Disposition": f"attachment; filename=rvc.wav"})
+    return StreamingResponse(
+        wf,
+        media_type="audio/wav",
+        headers={"Content-Disposition": f"attachment; filename=rvc.wav"},
+    )
 
 
 @app.post("/voice2voice_local", tags=["voice2voice"])
@@ -164,7 +175,7 @@ async def voice2voice_local(
     filter_radius: int = 3,
     resample_sr: int = 0,
     rms_mix_rate: float = 1,
-    protect: float = 0.33
+    protect: float = 0.33,
 ):
     """
     :param input_path: the .wav file to be converted
@@ -197,14 +208,19 @@ async def voice2voice_local(
     else:
         out_name = os.path.basename("input_path")
 
-    return StreamingResponse(wf, media_type="audio/wav", headers={"Content-Disposition": f"attachment; filename={out_name}"})
+    return StreamingResponse(
+        wf,
+        media_type="audio/wav",
+        headers={"Content-Disposition": f"attachment; filename={out_name}"},
+    )
+
 
 @app.get("/status")
 def status():
     return {"status": "ok"}
 
+
 # create model cache
 model_cache = ModelCache()
 # start uvicorn server
 uvicorn.run(app, host="localhost", port=8001)
-

@@ -7,6 +7,7 @@ import traceback
 
 from typing import Union
 
+
 def wav2(i, o, format):
     inp = av.open(i, "rb")
     if format == "m4a":
@@ -50,7 +51,6 @@ def load_audio(file, sr):
         raise RuntimeError(f"Failed to load audio: {e}")
 
     return np.frombuffer(out, np.float32).flatten()
-
 
 
 def clean_path(path_str):
