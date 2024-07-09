@@ -278,8 +278,13 @@ def load_wav_to_torch(full_path):
 
 
 def load_filepaths_and_text(filename, split="|"):
-    with open(filename, encoding="utf-8") as f:
-        filepaths_and_text = [line.strip().split(split) for line in f]
+    try:
+        with open(filename, encoding="utf-8") as f:
+            filepaths_and_text = [line.strip().split(split) for line in f]
+    except UnicodeDecodeError:
+        with open(filename) as f:
+            filepaths_and_text = [line.strip().split(split) for line in f]
+    
     return filepaths_and_text
 
 
@@ -312,10 +317,10 @@ def get_hparams(init=True):
         "-te", "--total_epoch", type=int, required=True, help="total_epoch"
     )
     parser.add_argument(
-        "-pg", "--pretrainG", type=str, default="", help="Pretrained Discriminator path"
+        "-pg", "--pretrainG", type=str, default="", help="Pretrained Generator path"
     )
     parser.add_argument(
-        "-pd", "--pretrainD", type=str, default="", help="Pretrained Generator path"
+        "-pd", "--pretrainD", type=str, default="", help="Pretrained Discriminator path"
     )
     parser.add_argument("-g", "--gpus", type=str, default="0", help="split by -")
     parser.add_argument(
